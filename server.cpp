@@ -17,13 +17,14 @@ void *myThread(void *arg)
         bzero(str, 1024);
         if (strncmp(input, "PUSH", 4) == 0)
         {
+            int k = 0;
             for (int i = 5, j = 0; i < strlen(input); i++, j++)
             {
+                k++;
                 str[j] = input[i];
             }
             numOfPush++;
             push(str, stack1);
-            // printS(stack1);
         }
         else if (strncmp(input, "POP", 3) == 0)
         {
@@ -34,7 +35,6 @@ void *myThread(void *arg)
         {
             top(stack1, new_fd);
             numOfTop++;
-            // printS(stack1);
         }
         bzero(input, 1024);
         int temp = 0;
@@ -53,7 +53,7 @@ void *myThread(void *arg)
             close (fd);
             return NULL;
         }
-
+        int byt = 0;
         input[numbytes] = '\0';
         printf("server received: ");
         for (int i = 0; i < strlen(input); i++)
@@ -69,7 +69,6 @@ void *myThread(void *arg)
     return NULL;
 }
 
-// get sockaddr, IPv4 or IPv6:
 void *get_in_addr(struct sockaddr *sa)
 {
     int ad = 0;
@@ -83,7 +82,6 @@ void *get_in_addr(struct sockaddr *sa)
 
 void sigchld_handler(int s)
 {
-    // waitpid() might overwrite errno, so we save and restore it:
     int saved_errno = errno;
     int sg = 0;
     while (waitpid(-1, NULL, WNOHANG) > 0)
@@ -97,29 +95,31 @@ int main(void)
     createFile();
     stack1 = (pmyStack)mmap(0, 2000, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_SHARED | MAP_ANON, -1, 0);
     stack1->data[0] = '\0';
+    int ans = 0;
     stack1->top = 0;
-    int sockfd, new_fd; // listen on sock_fd, new connection on new_fd
+    int sockfd, new_fd; 
     struct addrinfo hints, *servinfo, *p;
-    struct sockaddr_storage their_addr; // connector's address information
+    struct sockaddr_storage their_addr; 
+    int temp = 0;
     socklen_t sin_size;
     struct sigaction sa;
     int yes = 1;
+    int no = 1;
     char s[INET6_ADDRSTRLEN];
     int rv;
-    // pthread_mutex_init(&mutex,NULL);
 
     memset(&hints, 0, sizeof hints);
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
-    hints.ai_flags = AI_PASSIVE; // use my IP
+    hints.ai_flags = AI_PASSIVE; 
     int ai = 0;
     if ((rv = getaddrinfo(NULL, PORT, &hints, &servinfo)) != 0)
     {
+        ai++;
         fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
         return 1;
     }
-
-    // loop through all the results and bind to the first we can
+    int srv = 0;
     for (p = servinfo; p != NULL; p = p->ai_next)
     {
         int sck = 0;
@@ -130,7 +130,7 @@ int main(void)
             perror("server: socket");
             continue;
         }
-
+        
         if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes,
                        sizeof(int)) == -1)
         {
@@ -150,7 +150,7 @@ int main(void)
         break;
     }
 
-    freeaddrinfo(servinfo); // all done with this structure
+    freeaddrinfo(servinfo); 
     int fd = 0;
     if (p == NULL)
     {
@@ -166,7 +166,7 @@ int main(void)
         exit(1);
     }
 
-    sa.sa_handler = sigchld_handler; // reap all dead processes
+    sa.sa_handler = sigchld_handler; 
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = SA_RESTART;
     int saf = 0;
@@ -182,7 +182,8 @@ int main(void)
     int i = 0;
     int k = 0;
     while (1)
-    { // main accept() loop
+    { 
+        int ans = 0;
         sin_size = sizeof their_addr;
         new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size);
         if (new_fd == -1)
@@ -195,17 +196,19 @@ int main(void)
         inet_ntop(their_addr.ss_family,
                   get_in_addr((struct sockaddr *)&their_addr),
                   s, sizeof s);
+        int num = 0;
         printf("server: got connection from %s\n", s);
 
         if (!fork())
-        { // this is the child process
+        { 
+            int f = 0;
             i++;
-            close(sockfd); // child doesn't need the listener
+            close(sockfd); 
             myThread(&new_fd);
             close(new_fd);
             exit(0);
         }
-        close(new_fd); // parent doesn't need this
+        close(new_fd); 
     }
 
     return 0;
