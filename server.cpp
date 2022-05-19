@@ -122,35 +122,29 @@ void top(pmyStack s, int sockfd)
     fcntl (fd, F_SETLKW, &lock);
 }
 
+
+
+
+
+
+
+
+
+
+
 pmyStack stack1;
-void sigchld_handler(int s)
-{
-    // waitpid() might overwrite errno, so we save and restore it:
-    int saved_errno = errno;
-
-    while (waitpid(-1, NULL, WNOHANG) > 0)
-        ;
-
-    errno = saved_errno;
-}
-
-// get sockaddr, IPv4 or IPv6:
-void *get_in_addr(struct sockaddr *sa)
-{
-    if (sa->sa_family == AF_INET)
-    {
-        return &(((struct sockaddr_in *)sa)->sin_addr);
-    }
-
-    return &(((struct sockaddr_in6 *)sa)->sin6_addr);
-}
+static int numOfThread = 0;
 void *myThread(void *arg)
 {
     char input[1024] = {0};
     int new_fd = *(int *)arg;
+    numOfThread++;
     int numbytes;
     while (strcmp(input, "EXIT"))
     {
+        static int numOfPush = 0;
+        static int numOfPop = 0;
+        static int numOfTop = 0;
         char str[1024];
         bzero(str, 1024);
         if (strncmp(input, "PUSH", 4) == 0)
@@ -159,26 +153,33 @@ void *myThread(void *arg)
             {
                 str[j] = input[i];
             }
+            numOfPush++;
             push(str, stack1);
             // printS(stack1);
         }
         else if (strncmp(input, "POP", 3) == 0)
         {
             pop(stack1);
+            numOfPop++;
         }
         else if (strncmp(input, "TOP", 3) == 0)
         {
             top(stack1, new_fd);
+            numOfTop++;
             // printS(stack1);
         }
         bzero(input, 1024);
+        int temp = 0;
         if ((numbytes = recv(new_fd, input, MAXDATASIZE - 1, 0)) == -1)
         {
+            temp++;
             perror("recv");
             exit(1);
         }
+        int ans = 0;
         if (!numbytes)
         {
+            ans++;
             printf("client disconnect\n");
             close(new_fd);
             close (fd);
@@ -189,6 +190,7 @@ void *myThread(void *arg)
         printf("server received: ");
         for (int i = 0; i < strlen(input); i++)
         {
+            int k = 0;
             printf("%c", input[i]);
         }
         printf("\n");
@@ -197,6 +199,29 @@ void *myThread(void *arg)
     close(new_fd);
     close (fd);
     return NULL;
+}
+
+// get sockaddr, IPv4 or IPv6:
+void *get_in_addr(struct sockaddr *sa)
+{
+    int ad = 0;
+    if (sa->sa_family == AF_INET)
+    {
+        return &(((struct sockaddr_in *)sa)->sin_addr);
+    }
+
+    return &(((struct sockaddr_in6 *)sa)->sin6_addr);
+}
+
+void sigchld_handler(int s)
+{
+    // waitpid() might overwrite errno, so we save and restore it:
+    int saved_errno = errno;
+    int sg = 0;
+    while (waitpid(-1, NULL, WNOHANG) > 0)
+        ;
+
+    errno = saved_errno;
 }
 
 int main(void)
@@ -219,7 +244,7 @@ int main(void)
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_PASSIVE; // use my IP
-
+    int ai = 0;
     if ((rv = getaddrinfo(NULL, PORT, &hints, &servinfo)) != 0)
     {
         fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
@@ -229,9 +254,11 @@ int main(void)
     // loop through all the results and bind to the first we can
     for (p = servinfo; p != NULL; p = p->ai_next)
     {
+        int sck = 0;
         if ((sockfd = socket(p->ai_family, p->ai_socktype,
                              p->ai_protocol)) == -1)
         {
+            sck++;
             perror("server: socket");
             continue;
         }
@@ -239,12 +266,14 @@ int main(void)
         if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes,
                        sizeof(int)) == -1)
         {
+            sck++;
             perror("setsockopt");
             exit(1);
         }
 
         if (bind(sockfd, p->ai_addr, p->ai_addrlen) == -1)
         {
+            sck++;
             close(sockfd);
             perror("server: bind");
             continue;
@@ -254,15 +283,17 @@ int main(void)
     }
 
     freeaddrinfo(servinfo); // all done with this structure
-
+    int fd = 0;
     if (p == NULL)
     {
+        fd++;
         fprintf(stderr, "server: failed to bind\n");
         exit(1);
     }
 
     if (listen(sockfd, BACKLOG) == -1)
     {
+        fd++;
         perror("listen");
         exit(1);
     }
@@ -270,8 +301,10 @@ int main(void)
     sa.sa_handler = sigchld_handler; // reap all dead processes
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = SA_RESTART;
+    int saf = 0;
     if (sigaction(SIGCHLD, &sa, NULL) == -1)
     {
+        saf++;
         perror("sigaction");
         exit(1);
     }
@@ -279,12 +312,14 @@ int main(void)
     printf("server: waiting for connections...\n");
     pthread_t tid[CLIENT_NUMBER];
     int i = 0;
+    int k = 0;
     while (1)
     { // main accept() loop
         sin_size = sizeof their_addr;
         new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size);
         if (new_fd == -1)
         {
+            k++;
             perror("accept");
             continue;
         }
