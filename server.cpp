@@ -95,6 +95,7 @@ int main(void)
     createFile();
     int numOfFiles = 0;
     stack1 = (pmyStack)mmap(0, 2000, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_SHARED | MAP_ANON, -1, 0);
+    int numOfStacks = 0;
     stack1->data[0] = '\0';
     int ans = 0;
     stack1->top = 0;
