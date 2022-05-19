@@ -93,6 +93,7 @@ void sigchld_handler(int s)
 int main(void)
 {
     createFile();
+    int numOfFiles = 0;
     stack1 = (pmyStack)mmap(0, 2000, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_SHARED | MAP_ANON, -1, 0);
     stack1->data[0] = '\0';
     int ans = 0;
@@ -104,11 +105,12 @@ int main(void)
     socklen_t sin_size;
     struct sigaction sa;
     int yes = 1;
-    int no = 1;
     char s[INET6_ADDRSTRLEN];
     int rv;
+    int no = 1;
 
     memset(&hints, 0, sizeof hints);
+    int set = 0;
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_PASSIVE; 
