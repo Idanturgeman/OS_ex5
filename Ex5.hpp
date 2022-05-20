@@ -56,6 +56,7 @@ void push(char *str, pmyStack s){
     int ans = 0;
     s->data[s->top + 1] = '\0';
     s->top++;
+    int ans2 = 0;
     lock.l_type = F_UNLCK;
     fcntl (fd, F_SETLKW, &lock);
 }
